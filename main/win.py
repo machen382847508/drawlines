@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
-from main.FileTool import *
+from main.filetool import *
+from main.predict_lines import *
 
 #当鼠标按下时变为 True
 drawing = False
@@ -35,6 +36,9 @@ def draw_circle(event, x, y, flags, param):
             if len(pointList) > THRELD_LINES:#点数超过20个才选为合理区域
                 index += 1
                 pointdict[index] = pointList
+            point_len = len(pointList)-1
+            for s in range(point_len):
+                cv2.line(img,(pointList[s].x,pointList[s].y),(pointList[s+1].x,pointList[s+1].y),(0, 0, 0), 2)
             pointList = []
             drawing = False
 
@@ -52,6 +56,8 @@ while (True):
         if saveStatue == True:
             #分类
             print("正在分类......")
+            pl = PredictLine()
+            result = pl.predict_line("lujing.json")
 
             print("分类完成......")
             PROCESSING = True

@@ -1,18 +1,15 @@
 from main.filetool import *
 import matplotlib.pyplot as plt
 import numpy as np
+import cv2
 
-THRESHOLD_SIZE = 10
+THRESHOLD_SIZE = 10.0
+NEW_IMAGE = "result"
 
 class PredictLine:
     #从data的points中获取X轴和Y轴的数据
     def __init__(self):
         pass
-
-    def drawPath(self,dataX,dataY):
-        pathNum = len(dataX)
-        for i in range(pathNum):
-            plt.plot(dataX[i],dataY[i],label = str(i+1))
 
     #获取图中所有值写入dataMat中
     def readData(self,points:dict):
@@ -75,6 +72,9 @@ class PredictLine:
 
         return cost[len1-1,len2-1]
 
+    def show_result(self,pathClass):
+        pass
+
     def getPathSorted(self, pathAlike):
         # 路径条数
         lenMatrx = len(pathAlike)
@@ -83,7 +83,6 @@ class PredictLine:
         # 初始化used
         for x in range(lenMatrx):
             used.append(1)
-
         pathClass = []
         for i in range(lenMatrx):
             a2 = []
@@ -107,7 +106,6 @@ class PredictLine:
 
         for i in range(len(pathClass)):
             pathClass[i] = [i + 1 for i in pathClass[i]]
-
         return pathClass
 
 
@@ -125,13 +123,33 @@ class PredictLine:
                 pathDis = self.calDisMat(dmx[i], dmx[j], dmy[i], dmy[j])
                 if pathDis < THRESHOLD_SIZE:
                     pathSorted[i,j] = 1
-
         pathClass = self.getPathSorted(pathSorted)
-
         return pathClass
 
-
+    def drawPath(self, datax, datay):
+        pathNum = len(datax)
+        for i in range(pathNum):
+            plt.plot(datax[i], datay[i], label=str(i + 1))
 
 if __name__ == '__main__':
-    predictline = PredictLine()
-    predictline.predict_line("lujing.json")
+    pl = PredictLine()
+    result = pl.predict_line("lujing.json")
+    newimage = np.ones((512, 512, 3), np.uint8) * 255
+    cv2.namedWindow(NEW_IMAGE)
+
+    Ffile = FileTool("lujing.json")
+    pointsdict = Ffile.json_to_data_read2()
+    datax,datay = pl.readData(pointsdict)
+    len_data = len(datax)
+    colors = []
+    for i in range(len(result)):
+        colors.append((np.random.randint(0,255),np.random.randint(0,255),np.random.randint(0,255)))
+
+    for i in range(len(result)):
+        for item in result[i]:
+            for m in range(len(datax[item-1])-1):
+                cv2.line(newimage,(int(datax[item-1][m]),int(datay[item-1][m])),(int(datax[item-1][m+1]),int(datay[item-1][m+1])),colors[i], 2)
+            cv2.putText(newimage, str(item), (datax[item - 1][0], datay[item - 1][0]), cv2.FONT_HERSHEY_COMPLEX, 1,
+                    (0, 0, 0), 1)
+    cv2.imshow(NEW_IMAGE, newimage)
+    k = cv2.waitKey(0) & 0xFF

@@ -12,6 +12,7 @@ PROCESSING = False
 THRELD_LINES = 20
 IMAGE_NAME = "image"
 NEW_IMAGE = "result"
+FILE_NAME = "lujing.json"
 
 #创建失效后的函数
 def draw_none(event, x, y, flags, param):
@@ -52,7 +53,7 @@ cv2.namedWindow(IMAGE_NAME)
 cv2.setMouseCallback(IMAGE_NAME, draw_circle)
 
 
-while (True):
+while True:
     cv2.imshow('image', img)
     k = cv2.waitKey(1) & 0xFF
     if k == 27:#按esc结束
@@ -62,10 +63,10 @@ while (True):
             #分类
             print("正在分类......")
             pl = PredictLine()
-            Ffile = FileTool("lujing.json")
+            Ffile = FileTool(FILE_NAME)
             fcontents = Ffile.json_to_data_read2()
             datax, datay = pl.readData(fcontents)
-            result = pl.predict_line("lujing.json")
+            result = pl.predict_line(FILE_NAME)
             colors = []
             len_results = len(result)
             for i in range(len_results):
@@ -85,7 +86,7 @@ while (True):
         else:
             print("正在保存所画区域")
             #写入json文件
-            file = FileTool("lujing.json")
+            file = FileTool(FILE_NAME)
             file.dict_to_json_write_file(pointdict)
             # 设置鼠标画图失效
             cv2.setMouseCallback(IMAGE_NAME, draw_none)

@@ -1,9 +1,8 @@
 from main.filetool import *
-import matplotlib.pyplot as plt
 import numpy as np
 import cv2
 
-THRESHOLD_SIZE = 10.0
+THRESHOLD_SIZE = 41.2
 NEW_IMAGE = "result"
 
 class PredictLine:
@@ -31,21 +30,22 @@ class PredictLine:
         for row in range(len(dataMat)):
             dataArray = np.array(dataMat[row])
             maxNum = np.max(dataArray)
-            minNum = np.min(dataArray)
-            divNum = maxNum - minNum
-            minMat = np.ones(len(dataMat[row])) * minNum
-            b = np.ones(len(dataMat[row])) * divNum
-            dataMat[row] = (dataArray - minMat)/ b
+            # minNum = np.min(dataArray)
+            # divNum = maxNum - minNum
+            # minMat = np.ones(len(dataMat[row])) * minNum
+            b = np.ones(len(dataMat[row])) * maxNum
+            dataMat[row] = dataArray / b
         return dataMat
 
     #计算欧式距离
     def cal2dotsdistance(self,dot1,dot2):
         d1 = np.array(dot1)
         d2 = np.array(dot2)
-        ou = np.sqrt(np.sum(np.square(d1 - d2)))#讨论一下
+        #ou = np.linalg.norm(d1 - d2, ord=1)
+        ou = np.linalg.norm(d1 - d2)
         return ou
 
-    #求两条路径最小距离DWT算法
+    #求两条路径最小距离DTW算法
     def calDisMat(self,dataMatX1,dataMatX2,dataMatY1,dataMatY2):
         len1 = np.size(dataMatX1)
         len2 = np.size(dataMatX2)
@@ -53,7 +53,6 @@ class PredictLine:
         for i in range(len1):
             for j in range(len2):
                 pointDist[i, j] = self.cal2dotsdistance([dataMatX1[i],dataMatY1[i]],[dataMatX2[j],dataMatY2[j]])
-
         realmax = 1000
         cost = np.ones([len1, len2]) * realmax
         cost[0, 0] = pointDist[0, 0]
@@ -69,35 +68,27 @@ class PredictLine:
                 else:
                     cost3 = realmax
                 cost[i,j] = pointDist[i,j] + np.min([cost1,cost2,cost3])
-
-        return cost[len1-1,len2-1]
-
-    def show_result(self,pathClass):
-        pass
+        result = cost[len1-1,len2-1]/(len1+len2) * 2
+        return result
 
     def getPathSorted(self, pathAlike):
-        # 路径条数
         lenMatrx = len(pathAlike)
-        # used表示某一路线是否已经被划分为某一类
         used = []
-        # 初始化used
         for x in range(lenMatrx):
             used.append(1)
         pathClass = []
         for i in range(lenMatrx):
             a2 = []
-            if (used[i] == 1):  # 等于1表示该路径还未被划分
+            if (used[i] == 1):
                 a2.append(i)
                 used[i] = 0  # 标记为被使用
-            # 矩阵第j列
             for j in range(i + 1, lenMatrx):
-                # 第i行j列为1
                 if (pathAlike[i, j] == 1):
                     if (j not in a2 and used[j] == 1):
                         a2.append(j)
                         used[j] = 0
                     for x in range(0, lenMatrx):
-                        if (pathAlike[j, x] == 1):  # 与i行相关的第j列可看成第j行，找出与第j行相关的列
+                        if (pathAlike[j, x] == 1):
                             if (x not in a2 and used[x] == 1):
                                 a2.append(x)
                                 used[x] = 0  # 标记为被使用
@@ -114,22 +105,18 @@ class PredictLine:
         pl = PredictLine()
         ll = filet.json_to_data_read2()
         dmx, dmy = pl.readData(ll)
-        dmx = pl.featureScal(dmx)
-        dmy = pl.featureScal(dmy)
+        # dmx = pl.featureScal(dmx)
+        # dmy = pl.featureScal(dmy)
         pNum = len(dmx)
         pathSorted = np.zeros([pNum,pNum])
         for i in range(pNum):
             for j in range(pNum):
                 pathDis = self.calDisMat(dmx[i], dmx[j], dmy[i], dmy[j])
-                if pathDis < THRESHOLD_SIZE:
+                # print(i+1,"-",j+1,":",pathDis)
+                if pathDis < float(THRESHOLD_SIZE):
                     pathSorted[i,j] = 1
         pathClass = self.getPathSorted(pathSorted)
         return pathClass
-
-    def drawPath(self, datax, datay):
-        pathNum = len(datax)
-        for i in range(pathNum):
-            plt.plot(datax[i], datay[i], label=str(i + 1))
 
 if __name__ == '__main__':
     pl = PredictLine()
@@ -143,6 +130,7 @@ if __name__ == '__main__':
     len_data = len(datax)
     colors = []
     for i in range(len(result)):
+        print("第" + str(i + 1) + "类为：", result[i])
         colors.append((np.random.randint(0,255),np.random.randint(0,255),np.random.randint(0,255)))
 
     for i in range(len(result)):

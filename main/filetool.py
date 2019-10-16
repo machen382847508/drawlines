@@ -1,6 +1,6 @@
 from main.model import *
 
-SAMPLE_POINTS_NUMS = 5 #采样频率
+SAMPLE_POINTS_NUMS = 2 #采样频率
 
 class FileTool():
 
